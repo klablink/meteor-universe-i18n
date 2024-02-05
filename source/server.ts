@@ -5,7 +5,7 @@ import { Meteor } from 'meteor/meteor';
 import { WebApp } from 'meteor/webapp';
 import stripJsonComments from 'strip-json-comments';
 import { parse, resolve } from 'url';
-
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { getJS, getJSON, getYML } from './code-generators';
 import { GetCacheEntry, GetCacheFunction, i18n } from './common';
 import './global';
@@ -17,7 +17,22 @@ i18n._contextualLocale.get = () => _get() ?? i18n._getConnectionLocale();
 
 i18n._formatgetters = { getJS, getJSON, getYML };
 
-const _publishConnectionId = new Meteor.EnvironmentVariable<
+const EnvironmentVariable = class EnvironmentVariable<T> {
+  context: AsyncLocalStorage<T>;
+  constructor() {
+    this.context = new AsyncLocalStorage();
+  }
+
+  get() {
+    return this.context.getStore();
+  }
+
+  withValue(value: any, fn: Function) {
+    return this.context.run(value, () => fn());
+  }
+}
+
+const _publishConnectionId = new EnvironmentVariable<
   string | undefined
 >();
 i18n._getConnectionId = connection => {
