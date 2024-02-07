@@ -5,9 +5,9 @@ import './global';
 
 i18n.setOptions({ hostUrl: Meteor.absoluteUrl() });
 
-i18n._loadLocaleWithAncestors = (locale, options) => {
+i18n._loadLocaleWithAncestors = async (locale, options) => {
   if (i18n.options.sameLocaleOnServerConnection) {
-    Meteor.call('universe.i18n.setServerLocaleForConnection', locale);
+    await Meteor.callAsync('universe.i18n.setServerLocaleForConnection', locale);
   }
 
   let promise = Promise.resolve();
@@ -93,7 +93,8 @@ if (typeof preloaded === 'object') {
 
 (Meteor as any).connection._stream.on('reset', () => {
   if (i18n.options.sameLocaleOnServerConnection && i18n._locale) {
-    Meteor.call('universe.i18n.setServerLocaleForConnection', i18n._locale);
+    Meteor.callAsync('universe.i18n.setServerLocaleForConnection', i18n._locale)
+      .catch(console.error);
   }
 });
 
